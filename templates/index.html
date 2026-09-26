@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Predict Forest Weather Index (FWI) using environmental conditions and machine learning Ridge regression.">
+  <title>FWI Predictor — Forest Weather Index Prediction</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <div class="container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-badge">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+        </svg>
+        Algerian Fire Weather System • Ridge ML
+      </div>
+      <h1 class="app-title">FWI <span class="accent">Predictor</span></h1>
+      <p class="app-subtitle">
+        Predict Forest Weather Index using environmental and fire-weather conditions.
+      </p>
+    </header>
+
+    <!-- Quick Presets Bar -->
+    <section class="presets-card" aria-label="Demo Presets">
+      <div class="presets-label">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-5 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>
+        </svg>
+        Quick Fill Presets:
+      </div>
+      <div class="presets-group">
+        <button type="button" class="btn-preset" onclick="loadPreset('low')">
+          🌱 Low Risk Sample
+        </button>
+        <button type="button" class="btn-preset" onclick="loadPreset('high')">
+          🔥 High Fire Risk Sample
+        </button>
+        <button type="button" class="btn-preset reset" onclick="resetForm()">
+          ✕ Clear
+        </button>
+      </div>
+    </section>
+
+    <!-- Server-Side Error Alert -->
+    {% if error %}
+    <div class="alert alert-error" role="alert">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+      <div>
+        <strong>Input Error:</strong> {{ error }}
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Client-Side Error Alert (Initially Hidden) -->
+    <div id="clientAlert" class="alert alert-error" role="alert" style="display: none;">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+      </svg>
+      <div id="clientAlertMsg"></div>
+    </div>
+
+    <!-- Main Prediction Form -->
+    <main class="form-card">
+      <form id="fwiForm" action="{{ url_for('predict') }}" method="post" novalidate>
+
+        <div class="form-grid">
+          <!-- Section 1: Environmental Factors -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96z"/>
+              </svg>
+              Environmental Conditions
+            </legend>
+
+            <!-- Temperature -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="Temperature" class="form-label">Temperature</label>
+                <span class="unit-badge">°C</span>
+              </div>
+              <input
+                type="number"
+                id="Temperature"
+                name="Temperature"
+                class="input-control"
+                step="any"
+                min="-20"
+                max="60"
+                placeholder="e.g. 32.5"
+                value="{{ form_data.Temperature if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Ambient daytime temperature (22°C - 42°C typical)</small>
+            </div>
+
+            <!-- RH -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="RH" class="form-label">Relative Humidity (RH)</label>
+                <span class="unit-badge">%</span>
+              </div>
+              <input
+                type="number"
+                id="RH"
+                name="RH"
+                class="input-control"
+                step="any"
+                min="0"
+                max="100"
+                placeholder="e.g. 58.0"
+                value="{{ form_data.RH if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Atmospheric moisture content (0% - 100%)</small>
+            </div>
+
+            <!-- Ws -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="Ws" class="form-label">Wind Speed (Ws)</label>
+                <span class="unit-badge">km/h</span>
+              </div>
+              <input
+                type="number"
+                id="Ws"
+                name="Ws"
+                class="input-control"
+                step="any"
+                min="0"
+                max="120"
+                placeholder="e.g. 15.0"
+                value="{{ form_data.Ws if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Mean wind velocity at 10m open height (6 - 29 km/h typical)</small>
+            </div>
+
+            <!-- Rain -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="Rain" class="form-label">Rainfall (Rain)</label>
+                <span class="unit-badge">mm</span>
+              </div>
+              <input
+                type="number"
+                id="Rain"
+                name="Rain"
+                class="input-control"
+                step="any"
+                min="0"
+                max="300"
+                placeholder="e.g. 0.0"
+                value="{{ form_data.Rain if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Total precipitation recorded in the past 24 hours</small>
+            </div>
+          </fieldset>
+
+          <!-- Section 2: Fire Weather Indicators & Location -->
+          <fieldset class="form-section">
+            <legend class="section-legend">
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.784 1.399 8.163-7.333-3.856-7.333 3.856 1.399-8.163-5.934-5.784 8.2-1.192zm0 5.702l-2.023 4.1-4.524.657 3.274 3.191-.772 4.503 4.045-2.127 4.045 2.127-.772-4.503 3.274-3.191-4.524-.657z"/>
+              </svg>
+              Fire Weather Indicators & Region
+            </legend>
+
+            <!-- FFMC -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="FFMC" class="form-label">Fine Fuel Moisture Code (FFMC)</label>
+                <span class="unit-badge">0-101</span>
+              </div>
+              <input
+                type="number"
+                id="FFMC"
+                name="FFMC"
+                class="input-control"
+                step="any"
+                min="0"
+                max="105"
+                placeholder="e.g. 85.5"
+                value="{{ form_data.FFMC if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Moisture of surface forest litter & fine fuels (28 - 96 typical)</small>
+            </div>
+
+            <!-- DMC -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="DMC" class="form-label">Duff Moisture Code (DMC)</label>
+                <span class="unit-badge">index</span>
+              </div>
+              <input
+                type="number"
+                id="DMC"
+                name="DMC"
+                class="input-control"
+                step="any"
+                min="0"
+                max="500"
+                placeholder="e.g. 14.2"
+                value="{{ form_data.DMC if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Moisture of decomposing organic layer (0.7 - 65.9 typical)</small>
+            </div>
+
+            <!-- ISI -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="ISI" class="form-label">Initial Spread Index (ISI)</label>
+                <span class="unit-badge">index</span>
+              </div>
+              <input
+                type="number"
+                id="ISI"
+                name="ISI"
+                class="input-control"
+                step="any"
+                min="0"
+                max="150"
+                placeholder="e.g. 5.6"
+                value="{{ form_data.ISI if form_data else '' }}"
+                required
+              >
+              <small class="field-hint">Expected rate of fire spread combining wind & FFMC (0 - 19 typical)</small>
+            </div>
+
+            <!-- Classes -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="Classes" class="form-label">Fire Classification</label>
+                <span class="unit-badge">Status</span>
+              </div>
+              <select id="Classes" name="Classes" class="input-control" required>
+                <option value="" disabled {% if not form_data or form_data.Classes is not defined %}selected{% endif %}>Select fire state...</option>
+                <option value="1" {% if form_data and form_data.Classes == '1' %}selected{% endif %}>Fire (1) — Fire Detected</option>
+                <option value="0" {% if form_data and form_data.Classes == '0' %}selected{% endif %}>Not Fire (0) — No Fire</option>
+              </select>
+              <small class="field-hint">Fire status classification encoding: 1 = fire, 0 = not fire</small>
+            </div>
+
+            <!-- Region -->
+            <div class="form-group">
+              <div class="label-wrapper">
+                <label for="Region" class="form-label">Geographic Region</label>
+                <span class="unit-badge">Region</span>
+              </div>
+              <select id="Region" name="Region" class="input-control" required>
+                <option value="" disabled {% if not form_data or form_data.Region is not defined %}selected{% endif %}>Select Algerian region...</option>
+                <option value="0" {% if form_data and form_data.Region == '0' %}selected{% endif %}>Bejaia Region (0) — Northern Algeria</option>
+                <option value="1" {% if form_data and form_data.Region == '1' %}selected{% endif %}>Sidi-Bel Abbes Region (1) — Northwestern Algeria</option>
+              </select>
+              <small class="field-hint">Region encoding: 0 = Bejaia, 1 = Sidi-Bel Abbes</small>
+            </div>
+          </fieldset>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="submit" id="submitBtn" class="btn-primary">
+            <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M13.5.67s.74 2.65.74 4.8c0 2.06-1.35 3.73-3.41 3.73-2.07 0-3.63-1.67-3.63-3.73l.03-.36C5.21 7.51 4 10.62 4 14c0 4.42 3.58 8 8 8s8-3.58 8-8C20 8.61 17.41 3.8 13.5.67zM11.71 19c-1.78 0-3.22-1.4-3.22-3.14 0-1.62 1.05-2.76 2.81-3.12 1.77-.36 3.6-1.21 4.62-2.58.39 1.29.59 2.65.59 4.04 0 2.65-2.15 4.8-4.8 4.8z"/>
+            </svg>
+            <span class="spinner" aria-hidden="true"></span>
+            <span id="btnText">Predict Forest Weather Index</span>
+          </button>
+          <p class="form-footer-note">
+            Predictions computed via StandardScaler transformation and trained Ridge Regression.
+          </p>
+        </div>
+
+      </form>
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <p>Forest Weather Index Prediction System • Algerian Forest Fires Project</p>
+      <div class="footer-tags">
+        <span class="footer-tag">Python Flask</span>
+        <span class="footer-tag">Scikit-Learn Ridge</span>
+        <span class="footer-tag">StandardScaler Pipeline</span>
+        <span class="footer-tag">AWS Elastic Beanstalk Ready</span>
+      </div>
+    </footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>

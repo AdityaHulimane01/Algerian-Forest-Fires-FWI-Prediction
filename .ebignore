@@ -1,0 +1,15 @@
+# Elastic Beanstalk deployment ignore file
+notebooks/
+*.ipynb
+*.csv
+.git/
+.gitignore
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+*.log
+.vscode/
+.idea/
+venv/
+.env
