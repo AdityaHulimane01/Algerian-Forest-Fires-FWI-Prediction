@@ -7,12 +7,18 @@ from flask import Flask, request, render_template, redirect, url_for
 # Suppress cosmetic unpickle version and feature name warnings for clean production logs
 warnings.filterwarnings("ignore")
 
-# AWS Elastic Beanstalk looks for 'application' callable by default
-application = Flask(__name__)
+# Determine base directory anchored to this file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Flask application instance (both 'application' for AWS Elastic Beanstalk and 'app' for Vercel)
+application = Flask(
+    __name__,
+    template_folder=os.path.join(BASE_DIR, "templates"),
+    static_folder=os.path.join(BASE_DIR, "static"),
+)
 app = application
 
 # Load model and scaler using absolute path relative to this file
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 RIDGE_MODEL_PATH = os.path.join(BASE_DIR, "models", "ridge.pkl")
 SCALER_PATH = os.path.join(BASE_DIR, "models", "scaler.pkl")
 

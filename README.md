@@ -10,6 +10,7 @@ A production-ready Machine Learning web application deployed on **AWS Elastic Be
 - [Input Features & Encoding](#-input-features--encoding)
 - [Project Directory Structure](#-project-directory-structure)
 - [Local Development & Testing](#-local-development--testing)
+- [Vercel Deployment Guide (Zero Server Setup)](#-vercel-deployment-guide)
 - [AWS Elastic Beanstalk Deployment Guide](#-aws-elastic-beanstalk-deployment-guide)
 - [Production Architecture & EB Configurations](#-production-architecture--eb-configurations)
 - [Troubleshooting & Common Deployment Issues](#-troubleshooting--common-deployment-issues)
@@ -87,7 +88,11 @@ Based on standard Canadian Forest Fire Weather Index rating bands:
 ```
 Algeria_and_Bejai_Region_FWI_Prediction_Project/
 │
+├── api/
+│   └── index.py               # Vercel serverless function entry point
 ├── application.py             # Main Flask WSGI application entry point
+├── vercel.json                # Vercel serverless routes & bundle configurations
+├── .vercelignore              # Excludes dev notebooks & test files from Vercel
 ├── requirements.txt           # Minimal production dependencies
 ├── Procfile                   # Process configuration for Gunicorn on AWS EB
 ├── test_app.py                # Automated test suite (12 unit & integration tests)
@@ -96,7 +101,7 @@ Algeria_and_Bejai_Region_FWI_Prediction_Project/
 ├── .ebextensions/
 │   └── python.config          # Elastic Beanstalk WSGI handler configuration
 │
-├── .ebignore                  # Prevents dev notebooks & datasets from being deployed
+├── .ebignore                  # Prevents dev notebooks & datasets from being deployed to AWS EB
 ├── .gitignore                 # Standard Python git exclusions
 │
 ├── models/
@@ -154,6 +159,55 @@ OK
 python application.py
 ```
 Open your browser at: `http://localhost:5000`
+
+---
+
+## ⚡ Vercel Deployment Guide
+
+Deploying this Flask ML project to **Vercel** runs it as a serverless application with zero server maintenance.
+
+### Method A: Deploy via GitHub (Recommended & Easiest)
+
+1. **Push your code to GitHub**:
+   ```bash
+   git init
+   git add .
+   git commit -m "Configure project for Vercel & AWS deployment"
+   git branch -M main
+   git remote add origin https://github.com/<your-username>/<your-repo-name>.git
+   git push -u origin main
+   ```
+2. **Go to [Vercel](https://vercel.com)**:
+   - Log in and click **"Add New..."** > **"Project"**.
+   - Import your GitHub repository.
+3. **Configure & Deploy**:
+   - Vercel automatically detects the Python runtime and reads `vercel.json` and `requirements.txt`.
+   - Leave Framework Preset as **Other**.
+   - Click **"Deploy"**.
+4. **Access your application**:
+   - Vercel will build the dependencies and provide an instant live URL: `https://<your-project>.vercel.app`.
+
+---
+
+### Method B: Deploy via Vercel CLI
+
+1. **Install Vercel CLI**:
+   ```bash
+   npm install -g vercel
+   ```
+2. **Log in to Vercel**:
+   ```bash
+   vercel login
+   ```
+3. **Deploy from project root**:
+   ```bash
+   # Preview deployment
+   vercel
+
+   # Production deployment
+   vercel --prod
+   ```
+4. Follow the brief interactive prompts (Accept default settings by pressing Enter).
 
 ---
 
